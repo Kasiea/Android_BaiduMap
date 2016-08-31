@@ -341,6 +341,11 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         //在activity执行onDestroy时执行mMapView.onDestroy()，实现地图生命周期管理
         mMapView.onDestroy();
+
+        // 退出时销毁定位
+        mLocationClient.stop();
+        // 关闭定位图层
+        mBaiduMap.setMyLocationEnabled(false);
     }
 
     @Override
@@ -397,9 +402,6 @@ public class MainActivity extends AppCompatActivity {
         AppIndex.AppIndexApi.end(client, viewAction);
         client.disconnect();
 
-        // 退出时销毁定位
-        mLocationClient.stop();
-        // 关闭定位图层
-        mBaiduMap.setMyLocationEnabled(false);
+
     }
 }
