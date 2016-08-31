@@ -1,6 +1,7 @@
 package com.example.yeqinglu.map;
 
 
+import android.app.Notification;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.util.Log;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
+import com.baidu.location.BDNotifyListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.location.Poi;
@@ -15,6 +17,8 @@ import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.MapStatusUpdate;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
@@ -262,6 +266,12 @@ public class MainActivity extends AppCompatActivity {
             mBaiduMap.setMyLocationConfigeration(config);
             //
 
+            //自动定位到本身该位置
+            //根据位置移动
+            LatLng my_locate = new LatLng(location.getLatitude(),location.getLongitude());
+            MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(my_locate);
+            mBaiduMap.animateMapStatus(u);
+
             //Receive Location
             StringBuffer sb = new StringBuffer(256);
             sb.append("time : ");
@@ -322,6 +332,8 @@ public class MainActivity extends AppCompatActivity {
             }
             Log.i("BaiduLocationApiDem", sb.toString());
         }
+
+
     }
 
     @Override
