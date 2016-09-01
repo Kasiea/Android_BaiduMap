@@ -6,6 +6,12 @@ import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Adapter;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
@@ -28,7 +34,9 @@ import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.PolygonOptions;
 import com.baidu.mapapi.map.Stroke;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.search.core.PoiInfo;
 import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener;
+import com.baidu.mapapi.search.poi.PoiAddrInfo;
 import com.baidu.mapapi.search.poi.PoiCitySearchOption;
 import com.baidu.mapapi.search.poi.PoiDetailResult;
 import com.baidu.mapapi.search.poi.PoiIndoorResult;
@@ -54,6 +62,10 @@ public class MainActivity extends AppCompatActivity {
     public LocationClient mLocationClient = null;
     public BDLocationListener myListener = new MyLocationListener();
 
+    public ListView nearby_lv = null;
+    public TextView nearby_txt = null;
+    public Button poi = null;
+
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -75,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main);
 
+        poi = (Button)findViewById(R.id.poi);
+
         //定位
         mLocationClient = new LocationClient(getApplicationContext());     //声明LocationClient类
         mLocationClient.registerLocationListener( myListener );    //注册监听函数
@@ -82,6 +96,11 @@ public class MainActivity extends AppCompatActivity {
         //获取地图控件引用
         mMapView = (MapView) findViewById(R.id.bmapView);
         mBaiduMap = mMapView.getMap();
+
+        //初始化ListView
+//        nearby_lv = (ListView)findViewById(R.id.nearby_lv);
+
+        nearby_txt = (TextView)findViewById(R.id.nerby_txt);
 
 
         //设置地图类型
@@ -168,36 +187,6 @@ public class MainActivity extends AppCompatActivity {
         mBaiduMap.addOverlay(polygonOption);
 
 
-        //设置POI
-        //第一步，创建POI检索实例
-        mPoiSearch = PoiSearch.newInstance();
-
-        // 第二步，创建POI检索监听者；
-        OnGetPoiSearchResultListener poiListener = new OnGetPoiSearchResultListener() {
-            public void onGetPoiResult(PoiResult result) {
-                //获取POI检索结果
-            }
-
-            public void onGetPoiDetailResult(PoiDetailResult result) {
-                //获取Place详情页检索结果
-            }
-
-            @Override
-            public void onGetPoiIndoorResult(PoiIndoorResult poiIndoorResult) {
-
-            }
-        };
-
-        // 第三步，设置POI检索监听者；
-        mPoiSearch.setOnGetPoiSearchResultListener(poiListener);
-
-        // 第四步，发起检索请求；
-        mPoiSearch.searchInCity((new PoiCitySearchOption())
-                .city("上海").keyword("美食")
-                .pageNum(10));
-        //第五步，释放POI检索实例；
-        mPoiSearch.destroy();
-
         // 开启定位图层
         mBaiduMap.setMyLocationEnabled(true);
         //定位服务
@@ -212,7 +201,56 @@ public class MainActivity extends AppCompatActivity {
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+
+        //POI搜索周边
+        //将POI搜索方法延迟或者放进BUTTON，否则会出现Permission undefined情况
+        poi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //设置POI
+                //第一步，创建POI检索实例
+                mPoiSearch = PoiSearch.newInstance();
+
+                // 第二步，创建POI检索监听者；
+                OnGetPoiSearchResultListener poiListener = new OnGetPoiSearchResultListener() {
+                    public void onGetPoiResult(PoiResult result) {
+                        //获取POI检索结果
+                        if(result != null) {
+                            PoiInfo poiInfo = result.getAllPoi().get(1);
+                            nearby_txt.setText(poiInfo.address);
+                            //获取POI检索结果
+//                    List<PoiInfo> allAddr = result.getAllPoi();
+//                    for (PoiInfo p: allAddr) {
+//                        Log.d("MainActivity", "p.name--->" + p.name +"p.phoneNum" + p.phoneNum +" -->p.address:" + p.address + "p.location" + p.location);
+//                    }
+                        }
+                    }
+
+                    public void onGetPoiDetailResult(PoiDetailResult result) {
+                        //获取Place详情页检索结果
+                    }
+
+                    @Override
+                    public void onGetPoiIndoorResult(PoiIndoorResult poiIndoorResult) {
+
+                    }
+                };
+
+                // 第三步，设置POI检索监听者；
+                mPoiSearch.setOnGetPoiSearchResultListener(poiListener);
+
+                // 第四步，发起检索请求；
+                mPoiSearch.searchInCity((new PoiCitySearchOption())
+                        .city("上海").keyword("美食")
+                        .pageNum(10));
+                //第五步，释放POI检索实例；
+//        mPoiSearch.destroy();
+
+            }
+        });
     }
+
+
 
 
     /*设置定位参数包括：定位模式（高精度定位模式，低功耗定位模式和仅用设备定位模式），
