@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
     //Context需要时全进程有效的context,推荐用getApplicationConext获取全进程有效的context
     public LocationClient mLocationClient = null;
     public BDLocationListener myListener = new MyLocationListener();
+    public BDLocation my_location = null;
 
     public ListView nearby_lv = null;
     public TextView nearby_txt = null;
@@ -151,7 +152,10 @@ public class MainActivity extends AppCompatActivity {
         //初始化ListView
 //        nearby_lv = (ListView)findViewById(R.id.nearby_lv);
 
+        //POI搜索
         nearby_txt = (TextView)findViewById(R.id.nerby_txt);
+
+        //导航
         guid = (Button)findViewById(R.id.guid);
 
 
@@ -178,8 +182,6 @@ public class MainActivity extends AppCompatActivity {
         OverlayOptions option = new MarkerOptions().position(p1).icon(bitmap);
         //在地图上添加Marker，并显示
         mBaiduMap.addOverlay(option);
-
-
 
 
 //        //第一步，设置可拖拽：
@@ -310,17 +312,16 @@ public class MainActivity extends AppCompatActivity {
         if (initDirs()) {
             initNavi();
         }
+
+        //导航触发
         guid.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (BaiduNaviManager.isNaviInited()) {
                     routeplanToNavi(BNRoutePlanNode.CoordinateType.GCJ02);
                 }
-
-
             }
         });
-
     }
 
 
@@ -359,6 +360,7 @@ public class MainActivity extends AppCompatActivity {
             if (location == null || mBaiduMap == null) {
                 return;
             }
+            my_location = location;
             // 构造定位数据
             MyLocationData locData = new MyLocationData.Builder()
                     .accuracy(location.getRadius())
@@ -596,8 +598,14 @@ public class MainActivity extends AppCompatActivity {
         BNRoutePlanNode eNode = null;
         switch (coType) {
             case GCJ02: {
-                sNode = new BNRoutePlanNode(116.30142, 40.05087, "百度大厦", null, coType);
-                eNode = new BNRoutePlanNode(116.39750, 39.90882, "北京天安门", null, coType);
+
+//                sNode = new BNRoutePlanNode(116.30142, 40.05087, "百度大厦", null, coType);
+//                eNode = new BNRoutePlanNode(116.39750, 39.90882, "北京天安门", null, coType);
+//                break;
+
+                //制定起始点和终点的导航
+                sNode = new BNRoutePlanNode(my_location.getLongitude(),my_location.getLatitude(),"昂立大厦" , null, coType);
+                eNode = new BNRoutePlanNode(121.2, 31.1, "佘山", null, coType);
                 break;
             }
             case WGS84: {
