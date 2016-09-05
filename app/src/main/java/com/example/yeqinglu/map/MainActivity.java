@@ -28,6 +28,9 @@ import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.location.Poi;
 import com.baidu.mapapi.SDKInitializer;
+import com.baidu.mapapi.cloud.CloudManager;
+import com.baidu.mapapi.cloud.CloudSearchResult;
+import com.baidu.mapapi.cloud.LocalSearchInfo;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
@@ -72,16 +75,27 @@ public class MainActivity extends AppCompatActivity {
 
     MyLocationConfiguration.LocationMode mCurrentMode;
 
+    //定位
     //LocationClient类必须在主线程中声明。需要Context类型的参数。
     //Context需要时全进程有效的context,推荐用getApplicationConext获取全进程有效的context
+    //LocationClient进行定位的一些设置
     public LocationClient mLocationClient = null;
     public BDLocationListener myListener = new MyLocationListener();
     public BDLocation my_location = null;
+    private boolean isFirstIn = true;
+    public Button MyLocationBt = null;
+    private double mLatitude;
+    private double mLongtitude;
+    public BitmapDescriptor mCurrentMarker;
+    public MyOrientationListener myOritentationListener;
+    private float mCurrentX;
 
+    //POI
     public ListView nearby_lv = null;
     public TextView nearby_txt = null;
     public Button poi = null;
 
+    //导航
     private final static String authBaseArr[] =
             { Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_FINE_LOCATION };
     private final static int authBaseRequestCode = 1;
@@ -139,11 +153,34 @@ public class MainActivity extends AppCompatActivity {
 
         activityList.add(this);
 
-        poi = (Button)findViewById(R.id.poi);
-
         //定位
-        mLocationClient = new LocationClient(getApplicationContext());     //声明LocationClient类
+        mLocationClient = new LocationClient(getApplicationContext());     //声明LocationClient类，配置
         mLocationClient.registerLocationListener( myListener );    //注册监听函数
+        MyLocationBt = (Button)findViewById(R.id.my_location); //注册位置按钮
+        mCurrentMarker = BitmapDescriptorFactory
+                .fromResource(R.drawable.mark);//自定义图标
+        myOritentationListener = new MyOrientationListener(this.getApplicationContext());
+        //设置方向监听器
+        myOritentationListener.setOnOrientationListener(new MyOrientationListener.OnOrientationListener() {
+
+            @Override
+            public void onOrientationChanged(float x) {
+                mCurrentX = x;
+            }
+        });
+
+
+        //定位监听
+        MyLocationBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //定位到我的位置
+                LatLng latLng = new LatLng(mLatitude,mLongtitude);
+                MapStatusUpdate msu = MapStatusUpdateFactory.newLatLng(latLng);
+                mBaiduMap.animateMapStatus(msu);
+
+            }
+        });
 
         //获取地图控件引用
         mMapView = (MapView) findViewById(R.id.bmapView);
@@ -153,35 +190,27 @@ public class MainActivity extends AppCompatActivity {
 //        nearby_lv = (ListView)findViewById(R.id.nearby_lv);
 
         //POI搜索
+        poi = (Button)findViewById(R.id.poi);
         nearby_txt = (TextView)findViewById(R.id.nerby_txt);
 
         //导航
         guid = (Button)findViewById(R.id.guid);
 
 
-
         //设置地图类型
-        //普通地图
-        mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NORMAL);
-        //卫星地图
-//        mBaiduMap.setMapType(BaiduMap.MAP_TYPE_SATELLITE);
-        //空白地图
-//        mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NONE);
+        mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NORMAL); //普通地图
+//        mBaiduMap.setMapType(BaiduMap.MAP_TYPE_SATELLITE);//卫星地图
+//        mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NONE);//空白地图
 
         //设置交通，热力图
-        //打开实时交通图
-        mBaiduMap.setTrafficEnabled(true);
-        //城市热力图
-//        mBaiduMap.setBaiduHeatMapEnabled(true);
+        mBaiduMap.setTrafficEnabled(true);//打开实时交通图
+//        mBaiduMap.setBaiduHeatMapEnabled(true);  //城市热力图
 
-        //定义Maker坐标点
+        //自定义Maker坐标点
         LatLng p1 = new LatLng(31.1, 121.2);
-        //构建Marker图标
-        BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.car3);
-        //构建MarkerOption，用于在地图上添加Marker
-        OverlayOptions option = new MarkerOptions().position(p1).icon(bitmap);
-        //在地图上添加Marker，并显示
-        mBaiduMap.addOverlay(option);
+        BitmapDescriptor bitmap = BitmapDescriptorFactory.fromResource(R.drawable.car3);//构建Marker图标
+        OverlayOptions option = new MarkerOptions().position(p1).icon(bitmap);//构建MarkerOption，用于在地图上添加Marker
+        mBaiduMap.addOverlay(option);//在地图上添加Marker，并显示
 
 
 //        //第一步，设置可拖拽：
@@ -206,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
 //        });
 
 
-        //定义Maker坐标点
+        //定义动画效果的Maker坐标点
         LatLng point = new LatLng(39.963175, 116.400244);
         //设置动画效果
         BitmapDescriptor bdA = BitmapDescriptorFactory.fromResource(R.drawable.bd1);
@@ -244,6 +273,7 @@ public class MainActivity extends AppCompatActivity {
         mBaiduMap.addOverlay(polygonOption);
 
 
+        //可放在onStart（）内
         // 开启定位图层
         mBaiduMap.setMyLocationEnabled(true);
         //定位服务
@@ -360,28 +390,36 @@ public class MainActivity extends AppCompatActivity {
             if (location == null || mBaiduMap == null) {
                 return;
             }
+
             my_location = location;
+            mLatitude = location.getLatitude();
+            mLongtitude = location.getLongitude();
             // 构造定位数据
-            MyLocationData locData = new MyLocationData.Builder()
+            MyLocationData locData = new MyLocationData.Builder().
+                    direction(mCurrentX)//改变方向
                     .accuracy(location.getRadius())
                     // 此处设置开发者获取到的方向信息，顺时针0-360
-                    .direction(location.getDirection())//获取方向
+//                    .direction(location.getDirection())//获取方向
                     .latitude(location.getLatitude())
                     .longitude(location.getLongitude()).build();
 
             // 设置定位数据
             mBaiduMap.setMyLocationData(locData);
-            BitmapDescriptor mCurrentMarker = BitmapDescriptorFactory
-                    .fromResource(R.drawable.mark);
+
+            //自定义图标
             MyLocationConfiguration config = new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker);
             mBaiduMap.setMyLocationConfigeration(config);
             //
 
             //自动定位到本身该位置
             //根据位置移动
-            LatLng my_locate = new LatLng(location.getLatitude(),location.getLongitude());
-            MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(my_locate);
-            mBaiduMap.animateMapStatus(u);
+            if(isFirstIn) {
+                LatLng my_locate = new LatLng(location.getLatitude(), location.getLongitude());
+                MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(my_locate);
+                //更新位置
+                mBaiduMap.animateMapStatus(u);
+                isFirstIn = false;
+            }
 
             //Receive Location
             StringBuffer sb = new StringBuffer(256);
@@ -758,6 +796,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public void onGetSearchResult(CloudSearchResult result, int error) {
+        //在此处理相应的检索结果
+        LocalSearchInfo info = new LocalSearchInfo();
+        info.ak = "B266f735e43ab207ec152deff44fec8b";
+//此处info.ak为服务端ak，非Adnroid sdk端ak， 且此服务端ak和Adnroid sdk端ak 是在同一个账户。
+        info.geoTableId = 31869;
+// info.geoTableId 是存储在于info.ak相同开发账户中。
+        info.tags = "测试";
+        info.q = "天安门";
+        info.region = "北京市";
+        CloudManager.getInstance().localSearch(info);
+    }
+
+
 
     @Override
     protected void onDestroy() {
@@ -804,6 +856,13 @@ public class MainActivity extends AppCompatActivity {
                 Uri.parse("android-app://com.example.yeqinglu.map/http/host/path")
         );
         AppIndex.AppIndexApi.start(client, viewAction);
+
+        //开启定位
+        mBaiduMap.setMyLocationEnabled(true);
+        if (!mLocationClient.isStarted())
+            mLocationClient.start();;
+        //开启方向传感器
+        myOritentationListener.start();
     }
 
     @Override
@@ -824,6 +883,12 @@ public class MainActivity extends AppCompatActivity {
         );
         AppIndex.AppIndexApi.end(client, viewAction);
         client.disconnect();
+
+        //停止定位
+        mBaiduMap.setMyLocationEnabled(false);
+        mLocationClient.stop();
+        //停止方向传感器
+        myOritentationListener.stop();
 
 
     }
