@@ -6,6 +6,8 @@ import android.app.Activity;
 import android.app.Notification;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
@@ -36,6 +38,7 @@ import com.baidu.mapapi.cloud.LocalSearchInfo;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
@@ -246,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         //定义动画效果的Maker坐标点
-        LatLng point = new LatLng(39.963175, 116.400244);
+        final LatLng point = new LatLng(39.963175, 116.400244);
         //设置动画效果
         BitmapDescriptor bdA = BitmapDescriptorFactory.fromResource(R.drawable.bd1);
         BitmapDescriptor bdB = BitmapDescriptorFactory.fromResource(R.drawable.bd2);
@@ -389,6 +392,20 @@ public class MainActivity extends AppCompatActivity {
                 name.setText(info.getName());
                 zan.setText(info.getZan()+"");
 
+                InfoWindow infoWindow;
+                TextView tv = new TextView(getApplicationContext());
+                tv.setBackground(getResources().getDrawable(R.drawable.tip));
+                tv.setPadding(30,20,30,50);
+                tv.setText(info.getName());
+
+                final LatLng latLng = marker.getPosition();
+                Point p = mBaiduMap.getProjection().toScreenLocation(latLng);
+                p.y -= 47;
+                LatLng ll = mBaiduMap.getProjection().fromScreenLocation(p);
+
+                infoWindow = new InfoWindow(tv, ll,1);
+                mBaiduMap.showInfoWindow(infoWindow);
+
                 mMarkerLy.setVisibility(View.VISIBLE);
                 return true;
 
@@ -399,6 +416,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onMapClick(LatLng latLng) {
                 mMarkerLy.setVisibility(View.VISIBLE);
+                mBaiduMap.hideInfoWindow();
             }
 
             @Override

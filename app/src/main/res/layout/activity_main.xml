@@ -16,6 +16,13 @@
        >
    </com.baidu.mapapi.map.MapView>
 
+   <TextView
+       android:text="搜索：上海 美食"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+       android:layout_weight="3"
+       />
+
       <TextView
           android:id="@+id/nerby_txt"
           android:layout_width="match_parent"
