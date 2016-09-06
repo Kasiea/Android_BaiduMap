@@ -17,7 +17,9 @@ import android.view.View;
 import android.widget.Adapter;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,6 +36,7 @@ import com.baidu.mapapi.cloud.LocalSearchInfo;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
@@ -63,6 +66,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -110,6 +114,12 @@ public class MainActivity extends AppCompatActivity {
     public static List<Activity> activityList = new LinkedList<Activity>();
     public static final String ROUTE_PLAN_NODE = "routePlanNode";
     private Button guid = null;
+
+    //覆盖物相关
+    private BitmapDescriptor mMarker;
+    public Button add_overlay;
+    private RelativeLayout mMarkerLy;
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -352,8 +362,81 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        //添加覆盖物相关
+        add_overlay = (Button)findViewById(R.id.add_overlay);
+        add_overlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addOverlays(Info.infos);
+            }
+        });
+
+        initMarker();
+
+        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                Bundle extraInfo = marker.getExtraInfo();
+                Info info = (Info)extraInfo.getSerializable("info");
+                ImageView iv = (ImageView) mMarkerLy.findViewById(R.id.id_info_img);
+                TextView distance = (TextView) mMarkerLy.findViewById(R.id.id_info_dis);
+                TextView name = (TextView) mMarkerLy.findViewById(R.id.id_info_name);
+                TextView zan = (TextView) mMarkerLy.findViewById(R.id.id_info_zan);
+
+                iv.setImageResource(info.getImagId());
+                distance.setText(info.getDistance());
+                name.setText(info.getName());
+                zan.setText(info.getZan()+"");
+
+                mMarkerLy.setVisibility(View.VISIBLE);
+                return true;
+
+            }
+        });
+
+        mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                mMarkerLy.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public boolean onMapPoiClick(MapPoi mapPoi) {
+                return false;
+            }
+        });
+
+
     }
 
+    private void initMarker()
+    {
+        mMarker = BitmapDescriptorFactory.fromResource(R.drawable.marker);
+        mMarkerLy = (RelativeLayout)findViewById(R.id.id_marker_ly);
+    }
+
+    //添加覆盖物
+    private void addOverlays(List<Info>infos)
+    {
+        mBaiduMap.clear();
+        LatLng latLng = null ;
+        Marker marker = null;
+        OverlayOptions options;
+        for (Info info:infos)
+        {
+            //经纬度
+            latLng = new LatLng(info.getLatitude(),info.getLongtitude());
+            //图标
+            options = new MarkerOptions().position(latLng).icon(mMarker).zIndex(5);
+            marker = (Marker) mBaiduMap.addOverlay(options);
+            Bundle arg0 = new Bundle();
+            arg0.putSerializable("info",info);
+            marker.setExtraInfo(arg0);
+        }
+        MapStatusUpdate msu = MapStatusUpdateFactory.newLatLng(latLng);
+        mBaiduMap.setMapStatus(msu);
+    }
 
     /*设置定位参数包括：定位模式（高精度定位模式，低功耗定位模式和仅用设备定位模式），
     返回坐标类型，是否打开GPS，是否返回地址信息、位置语义化信息、POI信息等等。*/
@@ -407,7 +490,7 @@ public class MainActivity extends AppCompatActivity {
             mBaiduMap.setMyLocationData(locData);
 
             //自定义图标
-            MyLocationConfiguration config = new MyLocationConfiguration(mCurrentMode, true, mCurrentMarker);
+            MyLocationConfiguration config = new MyLocationConfiguration(MyLocationConfiguration.LocationMode.COMPASS, true, mCurrentMarker);
             mBaiduMap.setMyLocationConfigeration(config);
             //
 
