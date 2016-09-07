@@ -57,6 +57,7 @@ import com.baidu.mapapi.search.poi.PoiAddrInfo;
 import com.baidu.mapapi.search.poi.PoiCitySearchOption;
 import com.baidu.mapapi.search.poi.PoiDetailResult;
 import com.baidu.mapapi.search.poi.PoiIndoorResult;
+import com.baidu.mapapi.search.poi.PoiNearbySearchOption;
 import com.baidu.mapapi.search.poi.PoiResult;
 import com.baidu.mapapi.search.poi.PoiSearch;
 import com.baidu.navisdk.adapter.BNOuterTTSPlayerCallback;
@@ -227,25 +228,25 @@ public class MainActivity extends AppCompatActivity {
 
 
 //        //第一步，设置可拖拽：
-//        OverlayOptions options = new MarkerOptions()
-//                .position(point)  //设置marker的位置
-//                .icon(bitmap)  //设置marker图标
-//                .zIndex(9)  //设置marker所在层级
-//                .draggable(true);  //设置手势拖拽
-//        //将marker添加到地图上
-//        Marker marker = (Marker) (mBaiduMap.addOverlay(options));
+        OverlayOptions options = new MarkerOptions()
+                .position(p1)  //设置marker的位置
+                .icon(bitmap)  //设置marker图标
+                .zIndex(9)  //设置marker所在层级
+                .draggable(true);  //设置手势拖拽
+        //将marker添加到地图上
+        Marker marker = (Marker) (mBaiduMap.addOverlay(options));
 
-//        mBaiduMap.setOnMarkerDragListener(new BaiduMap.OnMarkerDragListener() {
-//            public void onMarkerDrag(Marker marker) {
-//                //拖拽中
-//            }
-//            public void onMarkerDragEnd(Marker marker) {
-//                //拖拽结束
-//            }
-//            public void onMarkerDragStart(Marker marker) {
-//                //开始拖拽
-//            }
-//        });
+        mBaiduMap.setOnMarkerDragListener(new BaiduMap.OnMarkerDragListener() {
+            public void onMarkerDrag(Marker marker) {
+                //拖拽中
+            }
+            public void onMarkerDragEnd(Marker marker) {
+                //拖拽结束
+            }
+            public void onMarkerDragStart(Marker marker) {
+                //开始拖拽
+            }
+        });
 
 
         //定义动画效果的Maker坐标点
@@ -302,51 +303,55 @@ public class MainActivity extends AppCompatActivity {
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
+
         //POI搜索周边
         //将POI搜索方法延迟或者放进BUTTON，否则会出现Permission undefined情况
-        poi.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //设置POI
-                //第一步，创建POI检索实例
-                mPoiSearch = PoiSearch.newInstance();
+        //设置POI
+        //第一步，创建POI检索实例
+        mPoiSearch = PoiSearch.newInstance();
 
-                // 第二步，创建POI检索监听者；
-                OnGetPoiSearchResultListener poiListener = new OnGetPoiSearchResultListener() {
-                    public void onGetPoiResult(PoiResult result) {
-                        //获取POI检索结果
-                        if(result != null) {
-                            PoiInfo poiInfo = result.getAllPoi().get(1);
-                            nearby_txt.setText(poiInfo.address + poiInfo.city + poiInfo.name
-                                    +poiInfo.phoneNum + poiInfo.postCode );
-                            //获取POI检索结果
+        // 第二步，创建POI检索监听者；
+        OnGetPoiSearchResultListener poiListener = new OnGetPoiSearchResultListener() {
+            public void onGetPoiResult(PoiResult result) {
+                //获取POI检索结果
+                if(result != null) {
+                    PoiInfo poiInfo = result.getAllPoi().get(1);
+                    nearby_txt.setText(poiInfo.address + poiInfo.city + poiInfo.name
+                            +poiInfo.phoneNum + poiInfo.postCode );
+                    //获取POI检索结果
 //                    List<PoiInfo> allAddr = result.getAllPoi();
 //                    for (PoiInfo p: allAddr) {
 //                        Log.d("MainActivity", "p.name--->" + p.name +"p.phoneNum" + p.phoneNum +" -->p.address:" + p.address + "p.location" + p.location);
 //                    }
-                        }
-                    }
+                }
+            }
 
-                    public void onGetPoiDetailResult(PoiDetailResult result) {
-                        //获取Place详情页检索结果
-                    }
+            public void onGetPoiDetailResult(PoiDetailResult result) {
+                //获取Place详情页检索结果
+            }
 
-                    @Override
-                    public void onGetPoiIndoorResult(PoiIndoorResult poiIndoorResult) {
+            @Override
+            public void onGetPoiIndoorResult(PoiIndoorResult poiIndoorResult) {
 
-                    }
-                };
+            }
+        };
 
-                // 第三步，设置POI检索监听者；
-                mPoiSearch.setOnGetPoiSearchResultListener(poiListener);
+        // 第三步，设置POI检索监听者；
+        mPoiSearch.setOnGetPoiSearchResultListener(poiListener);
 
+        poi.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 // 第四步，发起检索请求；
-                mPoiSearch.searchInCity((new PoiCitySearchOption())
-                        .city("上海").keyword("美食")
-                        .pageNum(10));
-                //第五步，释放POI检索实例；
-//        mPoiSearch.destroy();
+//                mPoiSearch.searchInCity((new PoiCitySearchOption())
+//                        .city("上海").keyword("美食")
+//                        .pageNum(10));
 
+                //附近POI搜索
+                //PS： location和radius的值一定要设置
+                mPoiSearch.searchNearby(new PoiNearbySearchOption().location(new LatLng(mLatitude,mLongtitude)).radius(1000).keyword("美食").pageNum(10));//搜索附近
+                //第五步，释放POI检索实例；
+//                mPoiSearch.destroy();
             }
         });
 
