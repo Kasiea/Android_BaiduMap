@@ -59,6 +59,12 @@
        android:layout_height="wrap_content"
        android:text="添加覆盖物"/>
 
+      <Button
+          android:id="@+id/add_circle"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="Add Circle"/>
+
    </LinearLayout>
 
    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"

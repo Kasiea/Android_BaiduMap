@@ -7,6 +7,7 @@ import android.app.Notification;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.net.Uri;
 import android.os.Environment;
@@ -38,6 +39,8 @@ import com.baidu.mapapi.cloud.LocalSearchInfo;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.Circle;
+import com.baidu.mapapi.map.CircleOptions;
 import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatusUpdate;
@@ -123,6 +126,11 @@ public class MainActivity extends AppCompatActivity {
     private BitmapDescriptor mMarker;
     public Button add_overlay;
     private RelativeLayout mMarkerLy;
+
+    //画圆
+    private CircleOptions circle;
+    private Button add_circle = null;
+
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -431,6 +439,25 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+        add_circle = (Button)findViewById(R.id.add_circle) ;
+        //画圆
+        add_circle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //画圆
+                circle = new CircleOptions();
+                LatLng center = new LatLng(mLatitude, mLongtitude);
+                circle.center(center);
+                circle.radius(800);
+                circle.fillColor(0xFF00FF00);
+                Stroke stroke = new Stroke(1,0xFF00FF00);
+                circle.stroke(stroke);
+                mBaiduMap.addOverlay(circle);;
+            }
+        });
+
+
+
     }
 
     private void initMarker()
@@ -515,7 +542,9 @@ public class MainActivity extends AppCompatActivity {
             //自定义图标
             MyLocationConfiguration config = new MyLocationConfiguration(MyLocationConfiguration.LocationMode.COMPASS, true, mCurrentMarker);
             mBaiduMap.setMyLocationConfigeration(config);
-            //
+
+
+
 
             //自动定位到本身该位置
             //根据位置移动
